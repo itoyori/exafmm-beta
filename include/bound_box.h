@@ -62,6 +62,100 @@ namespace EXAFMM_NAMESPACE {
       logger::stopTimer("Get bounds");                          // Stop timer
       return bounds;                                            // Return Xmin and Xmax
     }
+
+    // Global
+    // -----------------------------------------
+    // TODO: parallelize
+
+    //! Get Xmin and Xmax of bodies
+    Bounds getBounds(GBodies bodies) {
+      if (ityr::is_master()) {
+        logger::startTimer("Get bounds");                         // Start timer
+      }
+      Bounds bounds;                                            // Bounds : Contains Xmin, Xmax
+      if (bodies.empty()) {                                     // If body vector is empty
+	bounds.Xmin = bounds.Xmax = 0;                          //  Set bounds to 0
+      } else {                                                  // If body vector is not empty
+        auto mp_X = static_cast<vec3 Body::*>(&Source::X);
+        bounds.Xmin = bounds.Xmax = bodies.begin()->*(mp_X);
+        ityr::for_each(
+            body_seq_policy,
+            ityr::make_global_iterator(bodies.begin(), ityr::ori::mode::read),
+            ityr::make_global_iterator(bodies.end()  , ityr::ori::mode::read),
+            [&](const auto& B) {
+              bounds.Xmin = min(B.X, bounds.Xmin - 1e-5);          //   Update Xmin
+              bounds.Xmax = max(B.X, bounds.Xmax + 1e-5);          //   Update Xmax
+            });
+      }                                                         // End if for empty body vector
+      if (ityr::is_master()) {
+        logger::stopTimer("Get bounds");                          // Stop timer
+      }
+      return bounds;                                            // Return Xmin and Xmax
+    }
+
+    //! Update Xmin and Xmax of bodies
+    Bounds getBounds(GBodies bodies, Bounds bounds) {
+      if (ityr::is_master()) {
+        logger::startTimer("Get bounds");                         // Start timer
+      }
+      ityr::for_each(
+          body_seq_policy,
+          ityr::make_global_iterator(bodies.begin(), ityr::ori::mode::read),
+          ityr::make_global_iterator(bodies.end()  , ityr::ori::mode::read),
+          [&](const auto& B) {
+            bounds.Xmin = min(B.X, bounds.Xmin - 1e-5);            //  Update Xmin
+            bounds.Xmax = max(B.X, bounds.Xmax + 1e-5);            //  Update Xmax
+          });
+      if (ityr::is_master()) {
+        logger::stopTimer("Get bounds");                          // Stop timer
+      }
+      return bounds;                                            // Return Xmin and Xmax
+    }
+
+    //! Get Xmin and Xmax of cells
+    Bounds getBounds(GCells cells) {
+      if (ityr::is_master()) {
+        logger::startTimer("Get bounds");                         // Start timer
+      }
+      Bounds bounds;                                            // Bounds : Contains Xmin, Xmax
+      if (cells.empty()) {                                      // If cell vector is empty
+	bounds.Xmin = bounds.Xmax = 0;                          //  Set bounds to 0
+      } else {                                                  // If cell vector is not empty
+        auto mp_X = static_cast<vec3 Cell::*>(&CellBase::X);
+	bounds.Xmin = bounds.Xmax = cells.begin()->*(mp_X);           //  Initialize Xmin, Xmax
+        ityr::for_each(
+            cell_seq_policy,
+            ityr::make_global_iterator(cells.begin(), ityr::ori::mode::read),
+            ityr::make_global_iterator(cells.end()  , ityr::ori::mode::read),
+            [&](const auto& C) {
+              bounds.Xmin = min(vec3(C.X) - 1e-5, bounds.Xmin);          //   Update Xmin
+              bounds.Xmax = max(vec3(C.X) + 1e-5, bounds.Xmax);          //   Update Xmax
+            });
+      }                                                         // End if for empty body vector
+      if (ityr::is_master()) {
+        logger::stopTimer("Get bounds");                          // Stop timer
+      }
+      return bounds;                                            // Return Xmin and Xmax
+    }
+
+    //! Update Xmin and Xmax of cells
+    Bounds getBounds(GCells cells, Bounds bounds) {
+      if (ityr::is_master()) {
+        logger::startTimer("Get bounds");                         // Start timer
+      }
+      ityr::for_each(
+          cell_seq_policy,
+          ityr::make_global_iterator(cells.begin(), ityr::ori::mode::read),
+          ityr::make_global_iterator(cells.end()  , ityr::ori::mode::read),
+          [&](const auto& C) {
+            bounds.Xmin = min(vec3(C.X) - 1e-5, bounds.Xmin);            //  Update Xmin
+            bounds.Xmax = max(vec3(C.X) + 1e-5, bounds.Xmax);            //  Update Xmax
+          });
+      if (ityr::is_master()) {
+        logger::stopTimer("Get bounds");                          // Stop timer
+      }
+      return bounds;                                            // Return Xmin and Xmax
+    }
   };
 }
 #endif

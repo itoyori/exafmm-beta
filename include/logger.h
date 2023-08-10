@@ -59,6 +59,7 @@ namespace EXAFMM_NAMESPACE {
       return double(tv.tv_sec)+double(tv.tv_usec)*1e-6;         // Combine seconds and microseconds and return
     }
 
+#if 0
     //! Cycle counter
     inline uint64_t get_cycle() {
       uint32_t low = 0, high = 0;                               // Define low and high 32 bits of cycle counter
@@ -77,6 +78,7 @@ namespace EXAFMM_NAMESPACE {
 #endif
       return (uint64_t(high) << 32) | uint64_t(low);            // Return 64 bit cycle counter
     }
+#endif
 
     //! Print message to standard output
     inline void printTitle(std::string title) {

@@ -18,6 +18,8 @@ struct SIMD {
   }
 };
 
+#if EXAFMM_USE_SIMD
+
 #if defined __AVX512F__ || defined __MIC__
 template<>
 struct SIMD<16,float> {
@@ -88,6 +90,8 @@ struct SIMD<2,double> {
     std::cout << "SSE double    : pass" << std::endl;
   }
 };
+#endif
+
 #endif
 
 template<int S, typename T>
@@ -175,6 +179,7 @@ void test() {
 }
 
 int main(int , char ** ) {
+#if EXAFMM_USE_SIMD
 #if defined __AVX512F__ || defined __MIC__
   test<16,float>();
   test<8,double>();
@@ -186,6 +191,7 @@ int main(int , char ** ) {
 #ifdef __SSE__
   test<4,float>();
   test<2,double>();
+#endif
 #endif
   return 0;
 };
