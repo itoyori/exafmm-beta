@@ -1,6 +1,7 @@
 #ifndef macros_h
 #define macros_h
 
+#if EXAFMM_USE_SIMD
 // Detect SIMD Byte length of architecture
 #if __MIC__ | __AVX512F__
 const int SIMD_BYTES = 64;                                      //!< SIMD byte length of MIC and AVX512
@@ -10,6 +11,7 @@ const int SIMD_BYTES = 32;                                      //!< SIMD byte l
 const int SIMD_BYTES = 16;                                      //!< SIMD byte length of SSE, FX, SX
 #else
 #error no SIMD
+#endif
 #endif
 
 #ifndef __CUDACC__

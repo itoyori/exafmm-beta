@@ -22,3 +22,7 @@ Makefile
 Makefile.in
 stamp-h1
 build-aux
+
+examples/biotsavart
+examples/helmholtz
+examples/laplace

@@ -15,7 +15,7 @@ namespace EXAFMM_NAMESPACE {
     long filePosition;                                          //!< Position of file stream
 
     //! Split range and return partial range
-    void splitRange(int & begin, int & end, int iSplit, int numSplit) {
+    void splitRange(int & begin, int & end, int iSplit, int numSplit) const {
       assert(end > begin);                                      // Check that size > 0
       int size = end - begin;                                   // Size of range
       int increment = size / numSplit;                          // Increment of splitting
@@ -25,6 +25,7 @@ namespace EXAFMM_NAMESPACE {
       if (remainder > iSplit) end++;                            // Adjust the end counter for remainder
     }
 
+#if 0
     //! Uniform distribution on [-1,1]^3 lattice
     Bodies lattice(int numBodies, int mpirank, int mpisize) {
       int nx = int(std::pow(numBodies*mpisize, 1./3));          // Number of points in x direction
@@ -47,24 +48,31 @@ namespace EXAFMM_NAMESPACE {
       }                                                         // End loop over x direction
       return bodies;                                            // Return bodies
     }
+#endif
+
+    // TODO: support other particle distribution
 
     //! Random distribution in [-1,1]^3 cube
-    Bodies cube(int numBodies, int seed, int numSplit) {
-      Bodies bodies(numBodies);                                 // Initialize bodies
+    void cube(GBodies bodies, int seed, int numSplit) const {
       for (int i=0; i<numSplit; i++, seed++) {                  // Loop over partitions (if there are any)
 	int begin = 0;                                          //  Begin index of bodies
 	int end = bodies.size();                                //  End index of bodies
 	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
 	srand48(seed);                                          //  Set seed for random number generator
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  for (int d=0; d<3; d++) {                             //   Loop over dimension
-	    B->X[d] = drand48() * 2 * M_PI - M_PI;              //    Initialize coordinates
-	  }                                                     //   End loop over dimension
-	}                                                       //  End loop over bodies
+
+        ityr::for_each(
+            body_seq_policy,
+            ityr::make_global_iterator(bodies.begin() + begin, ityr::checkout_mode::write),
+            ityr::make_global_iterator(bodies.begin() + end  , ityr::checkout_mode::write),
+            [&](Body& B) {
+              for (int d=0; d<3; d++) {                             //   Loop over dimension
+                B.X[d] = drand48() * 2 * M_PI - M_PI;              //    Initialize coordinates
+              }                                                     //   End loop over dimension
+            });
       }                                                         // End loop over partitions
-      return bodies;                                            // Return bodies
     }
 
+#if 0
     //! Random distribution on r = 1 sphere
     Bodies sphere(int numBodies, int seed, int numSplit) {
       Bodies bodies(numBodies);                                 // Initialize bodies
@@ -134,38 +142,65 @@ namespace EXAFMM_NAMESPACE {
       }                                                         // End loop over partitions
       return bodies;                                            // Return bodies
     }
+#endif
 
   public:
     Dataset() : filePosition(0) {}                              // Constructor
 
+    // TODO: parallelize
     //! Initialize source values
-    void initSource(Bodies & bodies, int seed, int numSplit) {
+    void initSource(GBodies bodies, int seed, int numSplit) const {
       for (int i=0; i<numSplit; i++, seed++) {                  // Loop over partitions (if there are any)
 	int begin = 0;                                          //  Begin index of bodies
 	int end = bodies.size();                                //  End index of bodies
 	splitRange(begin, end, i, numSplit);                    //  Split range of bodies
 	srand48(seed);                                          //  Set seed for random number generator
+
 #if EXAFMM_LAPLACE
+
 	real_t average = 0;                                     //  Initialize average charge
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC = drand48() - .5;                              //   Initialize charge
-	  average += B->SRC;                                    //   Accumulate average
-	}                                                       //  End loop over bodies
-	average /= (end - begin);                               //  Normalize average
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC -= average;                                    //   Subtract average charge
-	}                                                       //  End loop over bodies
+        ityr::for_each(
+            body_seq_policy,
+            ityr::make_global_iterator(bodies.begin() + begin, ityr::checkout_mode::read_write),
+            ityr::make_global_iterator(bodies.begin() + end  , ityr::checkout_mode::read_write),
+            [&](Body& B) {
+              B.SRC = drand48() - .5;                              //   Initialize charge
+              average += B.SRC;                                    //   Accumulate average
+            });
+
+        average /= (end - begin);
+
+        ityr::for_each(
+            body_par_policy,
+            ityr::make_global_iterator(bodies.begin() + begin, ityr::checkout_mode::read_write),
+            ityr::make_global_iterator(bodies.begin() + end  , ityr::checkout_mode::read_write),
+            [=](Body& B) {
+              B.SRC -= average;
+            });
+
 #elif EXAFMM_HELMHOLTZ
-	for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  B->SRC = B->X[0] + I * B->X[1];                       //   Initialize source
-	}                                                       //  End loop over bodies
+
+        ityr::for_each(
+            body_par_policy,
+            ityr::make_global_iterator(bodies.begin() + begin, ityr::checkout_mode::read_write),
+            ityr::make_global_iterator(bodies.begin() + end  , ityr::checkout_mode::read_write),
+            [=](Body& B) {
+              B.SRC = B.X[0] + I * B.X[1];
+            });
+
 #elif EXAFMM_BIOTSAVART
-        for (B_iter B=bodies.begin()+begin; B!=bodies.begin()+end; B++) {// Loop over bodies
-	  for (int d=0; d<3; d++) {                             //   Loop over dimensions
-	    B->SRC[d] = drand48() / bodies.size();              //    Initialize source
-	  }                                                     //   End loop over dimensions
-	  B->SRC[3] = powf(bodies.size() * numSplit, -1./3) * 2 * M_PI * 0.01; // Initialize core radius
-        }                                                       //  End loop over bodies
+
+        ityr::for_each(
+            body_seq_policy,
+            ityr::make_global_iterator(bodies.begin() + begin, ityr::checkout_mode::read_write),
+            ityr::make_global_iterator(bodies.begin() + end  , ityr::checkout_mode::read_write),
+            [&](Body& B) {
+	      for (int d=0; d<3; d++) {                             //   Loop over dimensions
+	        B.SRC[d] = drand48() / bodies.size();              //    Initialize source
+	      }                                                     //   End loop over dimensions
+	      B.SRC[3] = powf(bodies.size() * numSplit, -1./3) * 2 * M_PI * 0.01; // Initialize core radius
+            });
+
 #endif
       }                                                         // End loop over partitions
     }
@@ -217,26 +252,33 @@ namespace EXAFMM_NAMESPACE {
     }
 
     //! Initialize target values
-    void initTarget(Bodies & bodies) {
-      for (B_iter B=bodies.begin(); B!=bodies.end(); B++) {     // Loop over bodies
-	B->TRG = 0;                                             //  Clear target values
-	B->IBODY = B-bodies.begin();                            //  Initial body numbering
-	B->ICELL = 0;                                           //  Initial cell index
-	B->WEIGHT = 1;                                          //  Initial weight
-      }                                                         // End loop over bodies
+    void initTarget(GBodies bodies) const {
+      ityr::for_each(
+          body_par_policy,
+          ityr::make_global_iterator(bodies.begin(), ityr::checkout_mode::read_write),
+          ityr::make_global_iterator(bodies.end()  , ityr::checkout_mode::read_write),
+          ityr::count_iterator<int>(0),
+          [=](auto&& B, int i) {
+            B.TRG = 0;                                             //  Clear target values
+            B.IBODY = i;                            //  Initial body numbering
+            B.ICELL = 0;                                           //  Initial cell index
+            B.WEIGHT = 1;                                          //  Initial weight
+          });
     }
 
     //! Initialize dsitribution, source & target value of bodies
-    Bodies initBodies(int numBodies, const char * distribution,
-		      int mpirank=0, int mpisize=1, int numSplit=1) {
-      Bodies bodies;                                            // Initialize bodies
+    void initBodies(GBodies bodies, const char * distribution,
+	 	    int mpirank=0, int mpisize=1, int numSplit=1) const {
       switch (distribution[0]) {                                // Switch between data distribution type
+#if 0
       case 'l':                                                 // Case for lattice
 	bodies = lattice(numBodies,mpirank,mpisize);            //  Uniform distribution on [-1,1]^3 lattice
 	break;                                                  // End case for lattice
+#endif
       case 'c':                                                 // Case for cube
-	bodies = cube(numBodies,mpirank,numSplit);              //  Random distribution in [-1,1]^3 cube
+	cube(bodies,mpirank,numSplit);              //  Random distribution in [-1,1]^3 cube
 	break;                                                  // End case for cube
+#if 0
       case 's':                                                 // Case for sphere
 	bodies = sphere(numBodies,mpirank,numSplit);            //  Random distribution on surface of r = 1 sphere
 	break;                                                  // End case for sphere
@@ -246,12 +288,12 @@ namespace EXAFMM_NAMESPACE {
       case 'p':                                                 // Case plummer
 	bodies = plummer(numBodies,mpirank,numSplit);           //  Plummer distribution in a r = M_PI/2 sphere
 	break;                                                  // End case for plummer
+#endif
       default:                                                  // If none of the above
 	fprintf(stderr, "Unknown data distribution %s\n", distribution);// Print error message
       }                                                         // End switch between data distribution type
       initSource(bodies,mpirank,numSplit);                      // Initialize source values
       initTarget(bodies);                                       // Initialize target values
-      return bodies;                                            // Return bodies
     }
 
     //! Read target values from file
@@ -287,14 +329,18 @@ namespace EXAFMM_NAMESPACE {
     }
 
     //! Downsize target bodies by even sampling
-    void sampleBodies(Bodies & bodies, int numTargets) {
+    global_vec<Body> sampleBodies(GBodies bodies, int numTargets) {
       if (numTargets < int(bodies.size())) {                    // If target size is smaller than current
-	int stride = bodies.size() / numTargets;                //  Stride of sampling
-	for (int i=0; i<numTargets; i++) {                      //  Loop over target samples
-	  bodies[i] = bodies[i*stride];                         //   Sample targets
-	}                                                       //  End loop over target samples
-	bodies.resize(numTargets);                              //  Resize bodies to target size
-      }                                                         // End if for target size
+        global_vec<Body> sampled(numTargets);
+        int stride = bodies.size() / numTargets;                //  Stride of sampling
+        for (int i=0; i<numTargets; i++) {                      //  Loop over target samples
+          sampled[i] = bodies[i*stride];                         //   Sample targets
+        }                                                       //  End loop over target samples
+        return sampled;
+      } else {
+        global_vec<Body> sampled(bodies.begin(), bodies.end());
+        return sampled;
+      }
     }
   };
 }

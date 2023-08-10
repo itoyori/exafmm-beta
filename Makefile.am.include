@@ -1,5 +1,5 @@
 # Optimization flags
-AM_CPPFLAGS = -I../include -I../vectorclass -I../kernels
+AM_CPPFLAGS = -I../include -I../vectorclass -I../kernels -I../itoyori/include -fno-stack-protector
 if EXAFMM_HAVE_BG
 AM_CXXFLAGS = -qarch=qp -qtune=qp -O3 -qhot
 AM_FCFLAGS = -qarch=qp -qtune=qp -O3 -qhot
@@ -12,16 +12,16 @@ if EXAFMM_HAVE_CRAY
 AM_CXXFLAGS = -dynamic
 AM_FCFLAGS = -dynamic
 if EXAFMM_HAVE_GNU
-AM_CXXFLAGS += -ffast-math -funroll-loops -fabi-version=6 -Wfatal-errors
+AM_CXXFLAGS += -ffast-math -funroll-loops -Wfatal-errors
 AM_FCFLAGS += -ffast-math -funroll-loops
 endif
 if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS += -ansi_alias -fabi-version=6 -Wfatal-errors
+AM_CXXFLAGS += -ansi_alias -Wfatal-errors
 AM_FCFLAGS += -ansi_alias
 endif
 else
 if EXAFMM_HAVE_INTEL
-AM_CXXFLAGS = -ansi_alias -fabi-version=6 -Wfatal-errors -wd11070,11071
+AM_CXXFLAGS = -ansi_alias -Wfatal-errors -wd11070,11071
 AM_FCFLAGS = -ansi_alias
 else
 if EXAFMM_HAVE_CLANG
@@ -29,7 +29,7 @@ AM_CXXFLAGS = -ffast-math -funroll-loops -Wfatal-errors
 AM_FCFLAGS = -ffast-math -funroll-loops
 else
 if EXAFMM_HAVE_GNU
-AM_CXXFLAGS = -ffast-math -funroll-loops -fabi-version=6 -Wfatal-errors
+AM_CXXFLAGS = -ffast-math -funroll-loops -Wfatal-errors
 AM_FCFLAGS = -ffast-math -funroll-loops
 else
 AM_CXXFLAGS =

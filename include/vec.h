@@ -2,8 +2,7 @@
 #define vec_h
 #include "namespace.h"
 #include <ostream>
-#if defined __FUJITSU || defined __INTEL_COMPILER
-#else
+#if defined __x64_64__
 #include "vectormath_trig.h"
 #include "vectormath_exp.h"
 #endif
@@ -553,6 +552,8 @@ namespace EXAFMM_NAMESPACE {
     }
   };
 #endif
+
+#if EXAFMM_USE_SIMD
 
 #if defined __MIC__ || defined __AVX512F__
 #if EXAFMM_VEC_VERBOSE
@@ -1611,6 +1612,8 @@ namespace EXAFMM_NAMESPACE {
       return temp;
     }
   };
+#endif
+
 #endif
 
 }

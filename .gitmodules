@@ -1,0 +1,3 @@
+[submodule "itoyori"]
+	path = itoyori
+	url = https://github.com/itoyori/itoyori.git

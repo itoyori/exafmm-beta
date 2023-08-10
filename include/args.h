@@ -57,7 +57,7 @@ namespace EXAFMM_NAMESPACE {
     int write;
 
   private:
-    void usage(char * name) {
+    void usage(char * name) const {
       fprintf(stderr,
 	      "Usage: %s [options]\n"
 	      "Long option (short option)       : Description (Default value)\n"
@@ -101,7 +101,7 @@ namespace EXAFMM_NAMESPACE {
 	      write);
     }
 
-    const char * parseDistribution(const char * arg) {
+    const char * parseDistribution(const char * arg) const {
       switch (arg[0]) {
       case 'c':
 	return "cube";
@@ -120,7 +120,7 @@ namespace EXAFMM_NAMESPACE {
       return "";
     }
 
-    uint64_t getBasisNum(const char * _basis) {
+    uint64_t getBasisNum(const char * _basis) const {
       switch (_basis[0]) {
       case 'C':
         return 0;
@@ -137,7 +137,7 @@ namespace EXAFMM_NAMESPACE {
       return 0;
     }
 
-    uint64_t getDistNum(const char * _distribution) {
+    uint64_t getDistNum(const char * _distribution) const {
       switch (_distribution[0]) {
       case 'c':
         return 0;
@@ -158,7 +158,7 @@ namespace EXAFMM_NAMESPACE {
       return 0;
     }
 
-    uint64_t getEqNum() {
+    uint64_t getEqNum() const {
 #if EXAFMM_LAPLACE
       return 0;
 #elif EXAFMM_HELMHOLTZ
@@ -170,7 +170,7 @@ namespace EXAFMM_NAMESPACE {
 #endif
     }
 
-    uint64_t getConfigNum() {
+    uint64_t getConfigNum() const {
       uint64_t key = 0;
 #if EXAFMM_SINGLE
       key |= 1;
@@ -206,7 +206,7 @@ namespace EXAFMM_NAMESPACE {
       write(0) {
       while (1) {
 	int option_index;
-	int c = getopt_long(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx", long_options, &option_index);
+	int c = getopt_long(argc, argv, "ab:c:d:De:gGhi:jmMn:op:P:r:s:t:T:vwx:", long_options, &option_index);
 	if (c == -1) break;
 	switch (c) {
 	case 'a':
@@ -273,7 +273,7 @@ namespace EXAFMM_NAMESPACE {
       }
     }
 
-    uint64_t getKey(int mpisize=1) {
+    uint64_t getKey(int mpisize=1) const {
       uint64_t key = 0;
       key |= uint64_t(round(log(ncrit)/log(2)));
       key |= getDistNum(distribution) << 4;
@@ -293,7 +293,7 @@ namespace EXAFMM_NAMESPACE {
       return key;
     }
 
-    void print(int stringLength) {
+    void print(int stringLength) const {
       if (verbose) {
 	std::cout << std::setw(stringLength) << std::fixed << std::left
 		  << "accuracy" << " : " << accuracy << std::endl
