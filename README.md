@@ -7,6 +7,12 @@ The original exafmm-beta repository: https://github.com/exafmm/exafmm-beta
 The current vertion only implements the `laplace`, `helmholtz`, and `biotsavart` kernels and the `cube` particle distribution with Itoyori.
 The Itoyori library is already included as a Git submodule at `itoyori/`.
 
+The changes from the original exafmm-beta implementation can be checked at [this commit](https://github.com/itoyori/exafmm-beta/commit/144eeb7947d40c2fc1f51f62db18a07b86199653).
+
+Highlighted changes among them:
+- Diff: [include/traversal.h](https://github.com/itoyori/exafmm-beta/commit/144eeb7947d40c2fc1f51f62db18a07b86199653#diff-14dcc384ed8ebce78beeaed4d2ecc45df6c3e754f771417082fd29530553f923)
+- Diff: [kernels/laplace.h](https://github.com/itoyori/exafmm-beta/commit/144eeb7947d40c2fc1f51f62db18a07b86199653#diff-c4b3a2dfbaea7ed1710cc624faa04bf4d6267146e17de531fe481a737468ca40)
+
 Build:
 ```sh
 git clone --recursive https://github.com/itoyori/exafmm-beta.git
