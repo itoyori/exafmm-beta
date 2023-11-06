@@ -83,7 +83,7 @@ namespace EXAFMM_NAMESPACE {
       if (ityr::is_master()) {
         logger::startTimer("Upward pass");                        // Start timer
       }
-      ityr::root_exec([=, *this] {
+      ityr::root_exec([=, *this]() mutable {
         if (!cells.empty()) {                                     // If cell vector is not empty
           GC_iter C0 = cells.begin();                              //  Set iterator of target root cell
           ityr::for_each(
@@ -107,7 +107,7 @@ namespace EXAFMM_NAMESPACE {
       if (ityr::is_master()) {
         logger::startTimer("Downward pass");                      // Start timer
       }
-      ityr::root_exec([=, *this] {
+      ityr::root_exec([=, *this]() mutable {
         if (!cells.empty()) {                                     // If cell vector is not empty
           GC_iter C0 = cells.begin();                              //  Root cell
           auto cs = ityr::make_checkout(C0, 1, ityr::checkout_mode::read);

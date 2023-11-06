@@ -107,8 +107,9 @@ namespace EXAFMM_NAMESPACE {
 
     //! Split cell and call traverse() recursively for child
     void splitCell(GC_iter Ci, GC_iter Cj, real_t remote) {
-      auto csi = ityr::make_checkout(Ci, 1, ityr::checkout_mode::read);
-      auto csj = ityr::make_checkout(Cj, 1, ityr::checkout_mode::read);
+      auto [csi, csj] =
+        ityr::make_checkouts(Ci, 1, ityr::checkout_mode::read,
+                             Cj, 1, ityr::checkout_mode::read);
       auto& Ci_ = csi[0];
       auto& Cj_ = csj[0];
 
@@ -157,8 +158,9 @@ namespace EXAFMM_NAMESPACE {
 
     //! Dual tree traversal for a single pair of cells
     void dualTreeTraversal(GC_iter Ci, GC_iter Cj, real_t remote) {
-      auto csi = ityr::make_checkout(Ci, 1, ityr::checkout_mode::read);
-      auto csj = ityr::make_checkout(Cj, 1, ityr::checkout_mode::read);
+      auto [csi, csj] =
+        ityr::make_checkouts(Ci, 1, ityr::checkout_mode::read,
+                             Cj, 1, ityr::checkout_mode::read);
       auto& Ci_ = csi[0];
       auto& Cj_ = csj[0];
 

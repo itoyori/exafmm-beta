@@ -391,14 +391,15 @@ namespace EXAFMM_NAMESPACE {
       getAnm();
     }
 
-    void P2P(const Cell* Ci, const Cell* Cj) {
+    void P2P(Cell* Ci, const Cell* Cj) {
       GB_iter GBi = Ci->BODY;
       GB_iter GBj = Cj->BODY;
       int ni = Ci->NBODY;
       int nj = Cj->NBODY;
 
-      auto Bi_ = ityr::make_checkout(GBi, ni, ityr::checkout_mode::read_write);
-      auto Bj_ = ityr::make_checkout(GBj, nj, ityr::checkout_mode::read);
+      auto [Bi_, Bj_] =
+        ityr::make_checkouts(GBi, ni, ityr::checkout_mode::read_write,
+                             GBj, nj, ityr::checkout_mode::read);
       auto Bi = Bi_.data();
       auto Bj = Bj_.data();
 
@@ -524,7 +525,7 @@ namespace EXAFMM_NAMESPACE {
       }
     }
 
-    void P2P_direct(const Cell* Ci, const Cell* Cj) {
+    void P2P_direct(Cell* Ci, const Cell* Cj) {
       GB_iter GBi = Ci->BODY;
       GB_iter GBj = Cj->BODY;
       int ni = Ci->NBODY;
@@ -662,9 +663,10 @@ namespace EXAFMM_NAMESPACE {
       }
     }
 
-    void P2M(const Cell* C) {
-      auto CM_ = ityr::make_checkout(C->M.data(), C->M.size(), ityr::checkout_mode::read_write);
-      auto Bp  = ityr::make_checkout(C->BODY    , C->NBODY   , ityr::checkout_mode::read);
+    void P2M(Cell* C) {
+      auto [CM_, Bp] =
+        ityr::make_checkouts(C->M.data(), C->M.size(), ityr::checkout_mode::read_write,
+                             C->BODY    , C->NBODY   , ityr::checkout_mode::read);
       auto CM = CM_.data();
 
       real_t Ynm[P*(P+1)/2];
@@ -705,7 +707,7 @@ namespace EXAFMM_NAMESPACE {
       for (int n=0; n<P; n++) CM[n] += Mnm[n] * I * wavek;
     }
 
-    void M2M(const Cell* Ci, const Cell* Cj0) {
+    void M2M(Cell* Ci, const Cell* Cj0) {
       real_t Ynm[P*(P+1)/2];
       complex_t phitemp[2*P], hn[P], ephi[2*P];
       complex_t Mnm[P*P], Mrot[P*P];
@@ -725,8 +727,9 @@ namespace EXAFMM_NAMESPACE {
 	  ephi[P-n] = conj(ephi[P+n]);
 	}
 
-        auto CiM_ = ityr::make_checkout(Ci->M.data(), Ci->M.size(), ityr::checkout_mode::read_write);
-        auto CjM_ = ityr::make_checkout(Cj->M.data(), Cj->M.size(), ityr::checkout_mode::read);
+        auto [CiM_, CjM_] =
+          ityr::make_checkouts(Ci->M.data(), Ci->M.size(), ityr::checkout_mode::read_write,
+                               Cj->M.data(), Cj->M.size(), ityr::checkout_mode::read);
         auto CiM = CiM_.data();
         auto CjM = CjM_.data();
 
@@ -791,9 +794,10 @@ namespace EXAFMM_NAMESPACE {
       }
     }
 
-    void M2L(const Cell* Ci, const Cell* Cj) {
-      auto CiL_ = ityr::make_checkout(Ci->L.data(), Ci->L.size(), ityr::checkout_mode::read_write);
-      auto CjM_ = ityr::make_checkout(Cj->M.data(), Cj->M.size(), ityr::checkout_mode::read);
+    void M2L(Cell* Ci, const Cell* Cj) {
+      auto [CiL_, CjM_] =
+        ityr::make_checkouts(Ci->L.data(), Ci->L.size(), ityr::checkout_mode::read_write,
+                             Cj->M.data(), Cj->M.size(), ityr::checkout_mode::read);
       auto CiL = CiL_.data();
       auto CjM = CjM_.data();
 
@@ -923,9 +927,10 @@ namespace EXAFMM_NAMESPACE {
       }
     }
 
-    void L2L(const Cell* Ci, const Cell* Cj) {
-      auto CiL_ = ityr::make_checkout(Ci->L.data(), Ci->L.size(), ityr::checkout_mode::read_write);
-      auto CjL_ = ityr::make_checkout(Cj->L.data(), Cj->L.size(), ityr::checkout_mode::read);
+    void L2L(Cell* Ci, const Cell* Cj) {
+      auto [CiL_, CjL_] =
+        ityr::make_checkouts(Ci->L.data(), Ci->L.size(), ityr::checkout_mode::read_write,
+                             Cj->L.data(), Cj->L.size(), ityr::checkout_mode::read);
       auto CiL = CiL_.data();
       auto CjL = CjL_.data();
 
@@ -1046,9 +1051,10 @@ namespace EXAFMM_NAMESPACE {
       for (int n=0; n<P*P; n++) CiL[n] += Lnm[n];
     }
 
-    void L2P(const Cell* C) {
-      auto Bp  = ityr::make_checkout(C->BODY    , C->NBODY   , ityr::checkout_mode::read_write);
-      auto CL_ = ityr::make_checkout(C->L.data(), C->L.size(), ityr::checkout_mode::read);
+    void L2P(Cell* C) {
+      auto [Bp, CL_] =
+        ityr::make_checkouts(C->BODY    , C->NBODY   , ityr::checkout_mode::read_write,
+                             C->L.data(), C->L.size(), ityr::checkout_mode::read);
       auto CL = CL_.data();
 
       real_t Ynm[P*(P+1)/2], Ynmd[P*(P+1)/2];

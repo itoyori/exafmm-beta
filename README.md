@@ -75,7 +75,7 @@ BOOST_ROOT=<path_to_boost>
 ./configure \
   CXXFLAGS="-Nclang -O3 -g -DNDEBUG -DITYR_ALLOCATOR_USE_BOOST=1 -I${BOOST_ROOT}/include" \
   LDFLAGS="-L${BOOST_ROOT}/lib -Wl,-R${BOOST_ROOT}/lib" \
-  LIBS="-lboost_container" \
+  LIBS="-lboost_container -ltofucom" \
   --enable-mpi --disable-simd --host=aarch64-linux-gnu
 ```
 
@@ -87,3 +87,4 @@ BOOST_ROOT=<path_to_boost>
     - Set `-DITYR_ALLOCATOR_USE_BOOST=1` for Itoyori to use Boost's memory allocator.
     - Specify the boost path with the `-I` and `-L` options (`-Wl,-R` is for setting RPATH).
     - Only Boost containers (`-lboost_container`) is required.
+- `-ltofucom` is needed to link to the uTofu library because Itoyori partly uses the low-level uTofu communication layer

@@ -190,7 +190,12 @@ void run_fmm(const Args& args) {
           should_break = true;
         }
       }
-      return std::make_tuple(should_break, pass_);
+      // std::tuple is not trivially copyable
+      struct ret_t {
+        bool should_break;
+        bool pass;
+      };
+      return ret_t{should_break, pass_};
     });
     pass = p;
 

@@ -101,8 +101,8 @@ namespace EXAFMM_NAMESPACE {
           binNode_->LEFT = binNode_left;
           binNode_->RIGHT = binNode_right;
 
-          auto csl = ityr::make_checkout(binNode_left , 1, ityr::checkout_mode::write);
-          auto csr = ityr::make_checkout(binNode_right, 1, ityr::checkout_mode::write);
+          auto [csl, csr] = ityr::make_checkouts(binNode_left , 1, ityr::checkout_mode::write,
+                                                 binNode_right, 1, ityr::checkout_mode::write);
           auto binNode_left_  = &csl[0];
           auto binNode_right_ = &csr[0];
 
@@ -248,7 +248,7 @@ namespace EXAFMM_NAMESPACE {
 	return (4 * n) / nspawn;                                // Conservative estimate of number of binary tree nodes
       }
 
-      global_ptr<OctreeNode> operator() () const {                                // Overload operator()
+      global_ptr<OctreeNode> operator() () {                                // Overload operator()
 	/* double tic = logger::get_time(); */
 	/* assert(getMaxBinNode(end - begin) <= binNode->END - binNode->BEGIN);// Bounds checking for node range */
 	if (begin == end) {                                     //  If no bodies are left
@@ -256,8 +256,9 @@ namespace EXAFMM_NAMESPACE {
 	}                                                       //  End if for no bodies
 	if (end - begin <= ncrit) {                             //  If number of bodies is less than threshold
           if (direction) {                                          //  If direction of data is from bodies to buffer
-            auto b_src  = ityr::make_checkout(bodies.begin() + begin, end - begin, ityr::checkout_mode::read);
-            auto b_dest = ityr::make_checkout(buffer.begin() + begin, end - begin, ityr::checkout_mode::write);
+            auto [b_src, b_dest] =
+              ityr::make_checkouts(bodies.begin() + begin, end - begin, ityr::checkout_mode::read,
+                                   buffer.begin() + begin, end - begin, ityr::checkout_mode::write);
             for (int i = 0; i < end - begin; i++) {
               b_dest[i] = b_src[i];
             }
@@ -357,8 +358,9 @@ namespace EXAFMM_NAMESPACE {
         GC_iter CNs[8];
         GC_iter Ci = CN;                                       //   CN points to the next free memory address
 
-        auto cso = ityr::make_checkout(octNode, 1, ityr::checkout_mode::read);
-        auto csc = ityr::make_checkout(C      , 1, ityr::checkout_mode::write);
+        auto [cso, csc] =
+          ityr::make_checkouts(octNode, 1, ityr::checkout_mode::read,
+                               C      , 1, ityr::checkout_mode::write);
         auto o = &cso[0];
 
         Cell* c = new (&csc[0]) Cell();
@@ -403,8 +405,7 @@ namespace EXAFMM_NAMESPACE {
               ityr::execution::par,
               ityr::count_iterator<int>(0),
               ityr::count_iterator<int>(nchild),
-              int(0),
-              [](int v1, int v2) { return std::max(v1, v2); },
+              ityr::reducer::max<int>{},
               [=, *this](int i) {
                 Nodes2cells nodes2cells(children[i],     //    Instantiate recursive functor
                                         B0, Ci+i, C0, CNs[i], X0, R0, nspawn, level+1, C-C0);
